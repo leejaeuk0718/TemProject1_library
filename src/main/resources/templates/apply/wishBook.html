@@ -225,10 +225,24 @@
     // 1. 서버 세션에서 로그인 여부 확인
     const isLoggedIn = [[${session.loginUser != null}]];
 
+    const phoneInput = document.getElementById('wishPhone');
+
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let val = e.target.value.replace(/[^0-9]/g, ''); // 숫자만 남기기
+            if (val.length > 3 && val.length <= 7) {
+                val = val.slice(0, 3) + '-' + val.slice(3);
+            } else if (val.length > 7) {
+                val = val.slice(0, 3) + '-' + val.slice(3, 7) + '-' + val.slice(7, 11);
+            }
+            e.target.value = val;
+        });
+    }
+
     // 2. 주요 요소들 가져오기 (변수 선언 확인!)
     const toggleBtn = document.getElementById('toggleButton');
     const collapseEl = document.getElementById('wishCollapse');
-    const wishForm = document.getElementById('wishBookForm'); // 이 줄이 빠져있었습니다!
+    const wishForm = document.getElementById('wishBookForm');
     const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
 
     // 3. 버튼 클릭 이벤트 가로채기 (로그인 체크)
@@ -273,8 +287,23 @@
 
         if (!confirm("신청서를 제출하시겠습니까?")) {
             e.preventDefault();
+        } else {
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 전송 중...';
         }
     });
+
+
+
+    //서버에서 보낸 일회성 메시지
+    const serverMessage = [[${message}]];
+    if (serverMessage) {
+        alert(serverMessage);
+    }
+
 </script>
+
 </body>
+
 </html>

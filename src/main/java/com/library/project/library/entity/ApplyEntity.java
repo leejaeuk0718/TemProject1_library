@@ -48,6 +48,10 @@ public class ApplyEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String eventContent = "상세 내용 없음"; // 행사 상세 내용
 
+    @Builder.Default
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String inquiryContent = "문의사항 없음";
+
     @Column(updatable = false)
     private LocalDateTime regDate; // 신청 접수 일시
 

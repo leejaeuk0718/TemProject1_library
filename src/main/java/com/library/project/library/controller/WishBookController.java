@@ -32,9 +32,9 @@ public class WishBookController {
     public String registerWishBook(WishBookDTO wishBookDTO, RedirectAttributes redirectAttributes) {
 
         //로그인 기능 구현 시 주석 해제하기
-        // public String registerWishBook(WishBookDTO wishBookDTO, HttpSession session, RedirectAttributes redirectAttributes) {
-        // String loginId = (String) session.getAttribute("mid");
-        // wishBookDTO.setMid(loginId);
+//         public String registerWishBook(WishBookDTO wishBookDTO, HttpSession session, RedirectAttributes redirectAttributes) {
+//         String loginId = (String) session.getAttribute("mid");
+//         wishBookDTO.setMid(loginId);
 
         log.info("==========================================");
         log.info("   [희망도서 신청 데이터 수신 확인]   ");
@@ -53,6 +53,8 @@ public class WishBookController {
             log.info("6. 첨부파일 없음 (선택사항)");
         }
         log.info("==========================================");
+
+        wishBookService.register(wishBookDTO);
 
         // 화면에 띄울 성공 메시지 전달
         redirectAttributes.addFlashAttribute("message",
