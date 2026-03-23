@@ -4,6 +4,8 @@ import com.library.project.library.dto.MemberDTO;
 import com.library.project.library.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -82,11 +84,22 @@ public class MemberController {
 
             // 1. 비밀번호가 일치하면 (성공)
             if(memberDTO.getMpw().equals(mpw)) {
-                session.setAttribute("loginInfo", memberDTO); // 세션에 저장
+                /*session.setAttribute("loginInfo", memberDTO); // 세션에 저장
                 log.info("로그인 성공! 마이페이지로 이동합니다.");
 
                 // [중요] 성공 시 리턴 경로는 마이페이지입니다!
-                return "redirect:/member/mypage?mid=" + mid;
+                return "redirect:/member/mypage?mid=" + mid;*/
+
+                session.setAttribute("loginInfo", memberDTO);
+
+                // ⭐ 세션에 저장된 '가려던 주소(dest)'가 있는지 확인!
+                String dest = (String) session.getAttribute("dest");
+                session.removeAttribute("dest"); // 쓴 다음엔 지워주기
+
+                if (dest != null) {
+                    return "redirect:" + dest; // 원래 가려던 곳으로!
+                }
+                return "redirect:/member/mypage?mid=" + mid; // 없으면 마이페이지로
             }
             // 2. 비밀번호가 틀리면 (실패)
             else {
@@ -102,6 +115,7 @@ public class MemberController {
     }
 
     // 로그아웃 화면 (GET)
+    /*
     @GetMapping("/logout")
     public String logout(HttpSession session, RedirectAttributes redirectAttributes) {
         log.info("MemberController - logout() 실행. 로그아웃 되었습니다.");
@@ -114,6 +128,27 @@ public class MemberController {
 
         return "redirect:/member/login";
     }
+    */
+    // 20260323 수정후
+    @GetMapping("/logout")
+    public String logout(HttpSession session, HttpServletResponse response, RedirectAttributes redirectAttributes) {
+        log.info("MemberController - logout() 실행. 로그아웃 되었습니다.");
+
+        // ✅ 1. 서버 세션 무효화
+        if (session != null) {
+            session.invalidate();
+        }
+
+        // ✅ 2. 브라우저 JSESSIONID 쿠키 직접 삭제
+        Cookie cookie = new Cookie("JSESSIONID", null);
+        cookie.setMaxAge(0);      // 즉시 만료
+        cookie.setPath("/");      // 생성된 path와 동일하게
+        cookie.setHttpOnly(true);
+        response.addCookie(cookie);
+
+        redirectAttributes.addFlashAttribute("logout", "success");
+        return "redirect:/member/login";
+    }
 
 
 
@@ -121,11 +156,26 @@ public class MemberController {
 //    @Tag(name = "내 서재 (마이페이지) (GET)",
 //            description = "내 서재 (마이페이지)")
     @Operation(summary = "내 서재 (마이페이지) (GET) 테스트", description = "내 서재 (마이페이지) (GET) 테스트")
+    /*
     @GetMapping("/mypage")
     public void myPage(String mid, Model model) {
         MemberDTO memberDTO = memberService.readOne(mid);
         model.addAttribute("dto", memberDTO);
     }
+    */
+    @GetMapping("/mypage")
+    public String myPage(String mid, HttpSession session, Model model) {
+        // ✅ 세션에서 직접 꺼내서 검증
+        MemberDTO loginInfo = (MemberDTO) session.getAttribute("loginInfo");
+        if (loginInfo == null) {
+            return "redirect:/member/login";
+        }
+
+        MemberDTO memberDTO = memberService.readOne(mid);
+        model.addAttribute("dto", memberDTO);
+        return "member/mypage"; // void → String으로 변경
+    }
+
 
     // 정보 수정 화면 (GET)
 //    @Tag(name = "회원 정보 수정 화면 (GET)",

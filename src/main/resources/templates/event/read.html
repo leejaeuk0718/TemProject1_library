@@ -2,9 +2,9 @@
 <html lang="ko"
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout/base}"> <div layout:fragment="content">
+      layout:decorate="~{layout/base}">
+<div layout:fragment="content">
     <style>
-        /* 누나만의 전용 스타일 */
         .poster-wrapper {
             width: 100%;
             max-width: 300px;
@@ -24,13 +24,26 @@
         .poster-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
         .info-table { border-top: 2px solid #003366; width: 100%; }
-        .info-row { display: flex; border-bottom: 1px solid #eee; align-items: center; }
-        .info-label { width: 120px; background: #f9f9f9; padding: 15px; font-weight: 600; font-size: 15px; color: #555; flex-shrink: 0; }
-        .info-value { flex: 1; padding: 15px; font-size: 15px; color: #1a1a1a; }
+        .info-row { display: flex; border-bottom: 1px solid #eee; }
+        .info-label { width: 120px; background: #f9f9f9; padding: 15px; font-weight: 600; font-size: 15px; color: #555; flex-shrink: 0; display: flex; align-items: center; }
+        .info-value {
+            flex: 1;
+            padding: 15px;
+            font-size: 15px;
+            color: #1a1a1a;
+            line-height: 1.8;
+            word-break: break-all;
+        }
+
+        .content-text {
+            white-space: pre-wrap;
+            word-break: break-all;
+            overflow-wrap: break-word;
+            margin: 0;
+            display: block;
+        }
 
         .modal-content { background: none; border: none; }
-
-        /* 레이아웃 여백 조정 */
         .detail-container { max-width: 900px; margin-top: 30px; margin-bottom: 50px; }
     </style>
 
@@ -38,16 +51,16 @@
         <div class="d-flex justify-content-between align-items-center pb-3 mb-4 border-bottom border-2" style="border-color: #003366 !important;">
             <h1 class="h4 mb-0 fw-bold" th:text="${dto.title}">행사 제목</h1>
             <div th:if="${dto.category != 'M'}" th:with="today=${#temporals.createToday()}">
-                <span th:if="${dto.eventDate.toLocalDate() >= today}" class="badge rounded-pill px-3 py-2" style="background-color: #eef2f7; color: #003366;">신청가능</span>
-                <span th:unless="${dto.eventDate.toLocalDate() >= today}" class="badge rounded-pill px-3 py-2 border text-muted" style="background-color: #f2f2f2;">마감</span>
+                <span th:if="${dto.eventDate != null and dto.eventDate.toLocalDate() >= today}" class="badge rounded-pill px-3 py-2" style="background-color: #eef2f7; color: #003366;">신청가능</span>
+                <span th:unless="${dto.eventDate != null and dto.eventDate.toLocalDate() >= today}" class="badge rounded-pill px-3 py-2 border text-muted" style="background-color: #f2f2f2;">마감</span>
             </div>
         </div>
 
         <div class="row g-4 mb-5">
             <div class="col-12 text-center" th:if="${dto.category == 'G' or dto.category == 'M'}">
                 <div class="poster-wrapper shadow-sm mx-auto" data-bs-toggle="modal" data-bs-target="#imageModal">
-                    <img th:if="${dto.imageName}" th:src="@{'/display?fileName=' + ${dto.imageName}}" alt="행사 포스터" id="posterImg">
-                    <div th:unless="${dto.imageName}" class="no-image text-muted">
+                    <img th:if="${dto.imageName != null and dto.imageName != ''}" th:src="${dto.imageName}" alt="행사 포스터">
+                    <div th:unless="${dto.imageName != null and dto.imageName != ''}" class="no-image text-muted">
                         <div style="font-size: 40px;">🖼️</div>
                         <div class="small">이미지 준비중</div>
                     </div>
@@ -63,7 +76,7 @@
                     </div>
                     <div class="info-row">
                         <div class="info-label">일시</div>
-                        <div class="info-value" th:text="${#temporals.format(dto.eventDate, 'yyyy-MM-dd HH:mm')}">일시</div>
+                        <div class="info-value" th:text="${dto.eventDate != null ? #temporals.format(dto.eventDate, 'yyyy-MM-dd HH:mm') : '-'}">일시</div>
                     </div>
                     <div class="info-row">
                         <div class="info-label">장소</div>
@@ -74,8 +87,10 @@
                         <div class="info-value" th:text="${dto.extraInfo != null and dto.extraInfo != '' ? dto.extraInfo : '-'}">비고</div>
                     </div>
                     <div class="info-row" style="border-bottom: 2px solid #eee;">
-                        <div class="info-label">내용</div>
-                        <div class="info-value" style="white-space: pre-wrap;" th:text="${dto.content}">내용</div>
+                        <div class="info-label" style="align-items: flex-start; padding-top: 15px;">내용</div>
+                        <div class="info-value">
+                            <p class="content-text" th:text="${dto.content}">내용</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -84,8 +99,8 @@
         <div class="d-flex justify-content-center gap-2 pt-4 border-top">
             <button type="button" class="btn btn-outline-secondary px-4 py-2" onclick="history.back();">목록으로</button>
             <th:block th:if="${dto.category != 'M'}" th:with="today=${#temporals.createToday()}">
-                <button th:if="${dto.eventDate.toLocalDate() >= today}" type="button" class="btn btn-primary px-4 py-2" id="applyBtn" style="background-color: #003366; border: none;">신청하기</button>
-                <button th:unless="${dto.eventDate.toLocalDate() >= today}" type="button" class="btn btn-secondary px-4 py-2" disabled style="background-color: #ccc; border: none;">접수마감</button>
+                <button th:if="${dto.eventDate != null and dto.eventDate.toLocalDate() >= today}" type="button" class="btn btn-primary px-4 py-2" id="applyBtn" style="background-color: #003366; border: none;">신청하기</button>
+                <button th:unless="${dto.eventDate != null and dto.eventDate.toLocalDate() >= today}" type="button" class="btn btn-secondary px-4 py-2" disabled style="background-color: #ccc; border: none;">접수마감</button>
             </th:block>
         </div>
     </div>
@@ -94,7 +109,7 @@
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-body p-0 text-center">
-                    <img th:if="${dto.imageName}" th:src="@{'/display?fileName=' + ${dto.imageName}}"
+                    <img th:if="${dto.imageName != null and dto.imageName != ''}" th:src="${dto.imageName}"
                          class="img-fluid rounded shadow-lg" data-bs-dismiss="modal" style="cursor: zoom-out; max-height: 90vh;">
                 </div>
             </div>
@@ -108,13 +123,6 @@
         if (applyBtn) {
             applyBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                const eventDateStr = [[${#temporals.format(dto.eventDate, 'yyyy-MM-dd')}]];
-                const today = new Date().toISOString().split('T')[0];
-                if (eventDateStr < today) {
-                    alert('이미 마감된 행사입니다.');
-                    location.reload();
-                    return;
-                }
                 const eventId = [[${dto.id}]];
                 if (confirm('이 행사에 신청하시겠습니까?')) {
                     fetch('/event/apply', {

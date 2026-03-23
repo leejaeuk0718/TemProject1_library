@@ -7,37 +7,22 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 @Log4j2
-public class LoginCheckInterceptor implements HandlerInterceptor {
+public class LoginCheckInterceptor_bk20260323 implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         log.info("--- 로그인 체크 인터셉터 실행 ---");
 
-        // ✅ 캐시 금지 (뒤로가기 방지)
-        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        response.setHeader("Pragma", "no-cache");
-        response.setDateHeader("Expires", 0);
+        HttpSession session = request.getSession();
 
-        HttpSession session = request.getSession(false); // ✅ false: 새 세션 생성 안 함
-
-        log.info("세션 ID: " + (session != null ? session.getId() : "없음"));
-        log.info("세션 만료시간(초): " + (session != null ? session.getMaxInactiveInterval() : "없음"));
-        log.info("loginInfo: " + (session != null ? session.getAttribute("loginInfo") : "없음"));
-
-        if (session == null || session.getAttribute("loginInfo") == null) {
+        // 세션에 loginInfo(로그인 정보)가 없으면 로그인 페이지로 튕겨내기
+        if (session.getAttribute("loginInfo") == null) {
             log.info("로그인 정보 없음! 로그인 페이지로 이동합니다.");
-
-            // ✅ 원래 가려던 주소 저장 (로그인 후 돌아오기 위해)
-            HttpSession newSession = request.getSession(true);
-            String dest = request.getRequestURI() +
-                    (request.getQueryString() != null ? "?" + request.getQueryString() : "");
-            newSession.setAttribute("dest", dest);
-
             response.sendRedirect("/member/login");
-            return false;
+            return false; // 컨트롤러로 못 가게 막음
         }
 
-        return true;
+        return true; // 로그인 되어 있으면 통과!
     }
 }
 
