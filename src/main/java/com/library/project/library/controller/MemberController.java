@@ -75,7 +75,23 @@ public class MemberController {
 //    @Tag(name = "로그인 화면 (GET) 테스트",
 //            description = "로그인 화면")
     @GetMapping("/login")
-    public void loginGet() {
+    /*public void loginGet() {
+        log.info("MemberController - loginGet() 진입");
+    }*/
+    public String loginGet(
+            @CookieValue(value = "savedMid", defaultValue = "") String savedMid,
+
+            //추가1_ljj
+            @RequestParam(value = "dest", required = false) String dest, // [1] 주소록 받기
+            HttpSession session,
+
+            Model model) {
+
+        //추가2_ljj
+        if (dest != null && !dest.isEmpty()) {
+            session.setAttribute("dest", dest);
+        }
+
         log.info("MemberController - loginGet() 진입");
     }
 
