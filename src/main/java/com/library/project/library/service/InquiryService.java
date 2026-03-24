@@ -1,6 +1,5 @@
 package com.library.project.library.service;
 
-
 import com.library.project.library.dto.InquiryDTO;
 import com.library.project.library.dto.InquiryListReplyCountDTO;
 import com.library.project.library.dto.PageRequestDTO;
@@ -18,6 +17,6 @@ public interface InquiryService {
     // 문의사항 목록 + 답변(댓글) 갯수 포함
     PageResponseDTO<InquiryListReplyCountDTO> listWithReplyCount(PageRequestDTO pageRequestDTO);
 
-    PageResponseDTO<InquiryListReplyCountDTO> listMyInquiry(PageRequestDTO pageRequestDTO, String writer);
-
+    // 📍 중복된 메서드 정리 (컨트롤러와 이름 맞춤)
+    PageResponseDTO<InquiryListReplyCountDTO> getMyInquiryList(String mid, PageRequestDTO pageRequestDTO);
 }

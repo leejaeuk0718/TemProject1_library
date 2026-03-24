@@ -55,6 +55,7 @@ public class InquirySearchImpl extends QuerydslRepositorySupport implements Inqu
         return performSearch(null, null, pageable, writer);
     }
 
+
     // 💡 중복을 제거한 공통 검색 로직
     private Page<InquiryListReplyCountDTO> performSearch(String[] types, String keyword, Pageable pageable, String writer) {
         QInquiry inquiry = QInquiry.inquiry;
