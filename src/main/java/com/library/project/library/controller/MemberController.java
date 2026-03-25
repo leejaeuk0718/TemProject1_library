@@ -1,6 +1,10 @@
 package com.library.project.library.controller;
 
+import com.library.project.library.dto.InquiryListReplyCountDTO;
 import com.library.project.library.dto.MemberDTO;
+import com.library.project.library.dto.PageRequestDTO;
+import com.library.project.library.dto.PageResponseDTO;
+import com.library.project.library.service.InquiryService;
 import com.library.project.library.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,6 +20,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.security.Principal;
+
 @Controller
 @RequestMapping("/member")
 @Log4j2
@@ -24,6 +30,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class MemberController {
 
     private final MemberService memberService;
+    private final InquiryService inquiryService;
 
     // =====================================================================
     // 1. 회원가입 화면 (GET) - join.html 연결
@@ -79,6 +86,8 @@ public class MemberController {
             Model model) {
 
         //추가2_ljj
+        // URL 파라미터로 dest 넘어올 때
+        // 예) /member/login?dest=/book/list → 파라미터로 dest 저장
         if (dest != null && !dest.isEmpty()) {
             session.setAttribute("dest", dest);
         }
@@ -205,7 +214,7 @@ public class MemberController {
     @GetMapping("/mypage")
 //    public String myPage(String mid, HttpSession session, Model model) {
     public String myPage(HttpSession session, Model model) {
-
+        log.info("MemberController - 마이페이지 진입 되었습니다.");
         // 세션 검증 - loginInfo 없으면 로그인 페이지로
         MemberDTO loginInfo = (MemberDTO) session.getAttribute("loginInfo");
         String mid = loginInfo.getMid();
@@ -306,11 +315,12 @@ public class MemberController {
         return memberService.checkEmail(email) ? "exist" : "ok";
     }
 
-    // =====================================================================
+    /*// =====================================================================
     // 11. 아이디/비밀번호 찾기 페이지 (GET)
     // =====================================================================
     @GetMapping("/find")
-    public void findGet() {
+    public String findGet() {
+        return "member/find";
     }
 
     // =====================================================================
@@ -331,7 +341,7 @@ public class MemberController {
     // 13. 비밀번호 찾기 - 본인 확인 후 변경 페이지 이동 (POST)
     // =====================================================================
     @PostMapping("/find-pw")
-    /*public String findPwPost(String mid, String email, Model model, RedirectAttributes redirectAttributes) {
+    *//*public String findPwPost(String mid, String email, Model model, RedirectAttributes redirectAttributes) {
         log.info("비밀번호 찾기 시도: mid=" + mid + ", email=" + email);
 
         if (memberService.checkMemberForPw(mid, email)) {
@@ -342,8 +352,8 @@ public class MemberController {
         log.warn("비밀번호 찾기 실패: 정보 불일치");
         redirectAttributes.addFlashAttribute("errorPw", "fail");
         return "redirect:/member/find";
-    }*/
-    public String findPwPost(String mid, String email, RedirectAttributes redirectAttributes) {
+    }*//*
+    *//*public String findPwPost(String mid, String email, RedirectAttributes redirectAttributes) {
         log.info("비밀번호 찾기 시도: mid=" + mid + ", email=" + email);
 
         if (memberService.checkMemberForPw(mid, email)) {
@@ -354,6 +364,28 @@ public class MemberController {
         log.warn("비밀번호 찾기 실패: 정보 불일치");
         redirectAttributes.addFlashAttribute("errorPw", "fail");
         return "redirect:/member/find";
+    }*//*
+    public String findPwPost(String mid, String email, RedirectAttributes redirectAttributes) {
+        if (memberService.checkMemberForPw(mid, email)) {
+            redirectAttributes.addFlashAttribute("verifiedMid", mid);
+            return "redirect:/member/reset-pw";  // 전용 페이지로!
+        }
+        redirectAttributes.addFlashAttribute("errorPw", "fail");
+        return "redirect:/member/find";
+    }
+
+    // 비밀번호 재설정 화면 GET
+    @GetMapping("/reset-pw")
+    public String resetPwGet(Model model) {
+        return "member/reset-pw";
+    }
+
+    // 비밀번호 재설정 처리 POST
+    @PostMapping("/reset-pw")
+    public String resetPwPost(String mid, String newPw, RedirectAttributes redirectAttributes) {
+        memberService.updatePassword(mid, newPw);
+        redirectAttributes.addFlashAttribute("result", "pwChanged");
+        return "redirect:/member/login";
     }
 
     // =====================================================================
@@ -365,8 +397,139 @@ public class MemberController {
         memberService.updatePassword(mid, newPw);
         redirectAttributes.addFlashAttribute("result", "pwChanged");
         return "redirect:/member/login";
+    }*/
+
+    // =====================================================================
+    // 11. 아이디 찾기 페이지 (GET)
+    // =====================================================================
+    @GetMapping("/find")
+    public String findGet(Model model) {
+        log.info("아이디 찾기 페이지 (GET)");
+        return "member/find";
     }
 
+    // =====================================================================
+    // 12. 아이디 찾기 처리 (POST)
+    // =====================================================================
+    @PostMapping("/find-id")
+    public String findIdPost(String mname, String email, RedirectAttributes redirectAttributes) {
+        log.info("아이디 찾기 처리 (POST)" + mname);
+        String mid = memberService.findId(mname, email);
+        if (mid != null) {
+            redirectAttributes.addFlashAttribute("foundMid", mid);
+        } else {
+            redirectAttributes.addFlashAttribute("errorId", "fail");
+        }
+        return "redirect:/member/find";
+    }
+
+    // =====================================================================
+    // 13. 비밀번호 찾기 페이지 (GET)
+    // =====================================================================
+    @GetMapping("/find-pw-page")
+    public String findPwPageGet(Model model) {
+        log.info("비밀번호 찾기 페이지 (GET)");
+        return "member/find-pw";
+    }
+
+    // =====================================================================
+    // 14. 비밀번호 찾기 본인확인 처리 (POST)
+    // =====================================================================
+    @PostMapping("/find-pw")
+    public String findPwPost(String mid, String email, RedirectAttributes redirectAttributes) {
+        log.info("비밀번호 찾기 시도: mid=" + mid + ", email=" + email);
+
+        if (memberService.checkMemberForPw(mid, email)) {
+            redirectAttributes.addFlashAttribute("verifiedMid", mid);
+            return "redirect:/member/reset-pw";
+        }
+
+        log.warn("비밀번호 찾기 실패: 정보 불일치");
+        redirectAttributes.addFlashAttribute("errorPw", "fail");
+        return "redirect:/member/find-pw-page";
+    }
+
+    // =====================================================================
+    // 15. 비밀번호 재설정 화면 (GET)
+    // =====================================================================
+    @GetMapping("/reset-pw")
+    public String resetPwGet(Model model) {
+        log.info("비밀번호 재설정 화면 (GET)");
+        return "member/reset-pw";
+    }
+
+    // =====================================================================
+    // 16. 비밀번호 재설정 처리 (POST)
+    // =====================================================================
+    @PostMapping("/reset-pw")
+    public String resetPwPost(String mid, String newPw, RedirectAttributes redirectAttributes) {
+        log.info("비밀번호 재설정 처리 시작: mid=" + mid);
+        memberService.updatePassword(mid, newPw);
+        redirectAttributes.addFlashAttribute("result", "pwChanged");
+        return "redirect:/member/login";
+    }
+
+    // =====================================================================
+    // 17. 비밀번호 실제 변경 처리 (POST) - 로그인 후 정보수정에서 사용
+    // =====================================================================
+    @PostMapping("/change-pw")
+    public String changePwPost(String mid, String newPw, RedirectAttributes redirectAttributes) {
+        log.info("비밀번호 변경 처리 시작: mid=" + mid);
+        memberService.updatePassword(mid, newPw);
+        redirectAttributes.addFlashAttribute("result", "pwChanged");
+        return "redirect:/member/login";
+    }
+
+
+
+    // MemberController.java
+
+    @GetMapping("/inquiryList") // 📍 404 에러가 나는 그 주소로 정확히 맞춤
+    public String myList(PageRequestDTO pageRequestDTO, Model model, Principal principal) {
+        log.info(">>>> 내 문의 내역 페이지 접속 중...");
+
+        // 1. 로그인 체크 (테스트용 user1)
+        String writer = "user1";
+        if (principal != null) {
+            writer = principal.getName();
+        }
+
+        // 2. 서비스 호출
+        PageResponseDTO<InquiryListReplyCountDTO> responseDTO =
+                inquiryService.getMyInquiryList(writer, pageRequestDTO);
+
+        model.addAttribute("responseDTO", responseDTO);
+        model.addAttribute("writer", writer);
+
+        // 3. 리턴 경로 (HTML 파일 위치)
+        // src/main/resources/templates/inquiry/myList.html 가 있다면 아래가 맞음
+        return "inquiry/myList";
+    }
+    /*public String myList(HttpSession session, PageRequestDTO pageRequestDTO, Model model) {
+        log.info(">>>> 내 문의 내역 페이지 접속 중...");
+
+        // 1. 로그인 체크 (테스트용 user1)
+//        String writer = "user1";
+//        if (principal != null) {
+//            writer = principal.getName();
+//        }
+        // 황혜은 수정 20260324
+        // 1. 세션에서 로그인 정보 꺼내기 (인터셉터가 체크해주므로 바로 꺼내면 됨)
+        MemberDTO loginInfo = (MemberDTO) session.getAttribute("loginInfo");
+        String mid = loginInfo.getMid();
+        String mname = loginInfo.getMname();
+        log.info("문의내역 mid" + mid);
+        // 2. 서비스 호출
+        PageResponseDTO<InquiryListReplyCountDTO> responseDTO =
+                inquiryService.getMyInquiryList(mid, pageRequestDTO);
+
+        model.addAttribute("responseDTO", responseDTO);
+        model.addAttribute("writer", mname);
+
+        // 3. 리턴 경로 (HTML 파일 위치)
+        // src/main/resources/templates/inquiry/myList.html 가 있다면 아래가 맞음
+        return "inquiry/myList";
+    }*/
 }
 
 /*
